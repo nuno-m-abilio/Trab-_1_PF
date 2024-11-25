@@ -1,6 +1,6 @@
-import gleam/io
-import gleam/String
-import sgleam.check
+import gleam/string
+import gleam/list
+import sgleam/check
 
 //   Análise do problema: O objetivo do trabalho é gerar a tabela de classificação do Brasileirão.
 // Para isso, o usuário passará para o programa uma lista de Strings com os resultados dos jogos
@@ -26,7 +26,7 @@ pub type Jogo {
     // golsAnf é a quantidade de gols que o anfitrião fez
     // vis é o nome do time visitante que participou do jogo
     // golsVis é a quantidade de gols que o visitante fez
-    Jogo(anf: String, golsAnf: Int, vis: String, golsVis: Int)
+    Jogo(anf: String, gols_anf: Int, vis: String, gols_vis: Int)
 }
 // Uma linha da tabela de classificação do Brasileirão
 pub type Linha {
@@ -46,32 +46,52 @@ pub type Linha {
 // caso de empates, usando os critérios "Número de Vitórias" (terceira coluna), "Saldo de Gols"
 // (quarta coluna) "Ordem Alfabética". Caso o valor de algum jogo da entrada esteja errado,
 // retorna-se um erro.
-pub fn tabela_class(jogos: List[String]) -> Result(List[String], Nil){
-    todo
-}
+// pub fn tabela_class(jogos: List(String)) -> Result(List(String), Nil){
+//     todo
+// }
 
-pub fn tabela_class_examples(){
-    check.eq(gera_tabela(["Sao-Paulo 1 Atletico-MG 2", "Flamengo 2 Palmeiras 1",
-    "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2"], Ok(["Flamengo 6 2 2",
-    "Atletico-MG 3 1 0", "Palmeiras 1 0 -1", "Sao-Paulo 1 0 -1"])))
-    check.eq(gera_tabela(["Sao-Paulo -1 Atletico-MG 2", "Flamengo 2 Palmeiras 1",
-    "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2"], Error(Nil)))
-    check.eq(gera_tabela(["Sao-Paulo a Atletico-MG 2", "Flamengo 2 Palmeiras 1",
-    "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2"], Error(Nil)))
-    check.eq(gera_tabela(["Sao Paulo 1 Atletico-MG 2", "Flamengo 2 Palmeiras 1",
-    "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2"], Error(Nil)))
-    check.eq(gera_tabela(["Sao-Paulo Atletico-MG 2", "Flamengo 2 Palmeiras 1",
-    "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2"], Error(Nil)))
-}
+// pub fn tabela_class_examples(){
+//     check.eq(gera_tabela(["Sao-Paulo 1 Atletico-MG 2", "Flamengo 2 Palmeiras 1",
+//     "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2"], Ok(["Flamengo 6 2 2",
+//     "Atletico-MG 3 1 0", "Palmeiras 1 0 -1", "Sao-Paulo 1 0 -1"])))
+//     check.eq(gera_tabela(["Sao-Paulo -1 Atletico-MG 2", "Flamengo 2 Palmeiras 1",
+//     "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2"], Error(Nil)))
+//     check.eq(gera_tabela(["Sao-Paulo a Atletico-MG 2", "Flamengo 2 Palmeiras 1",
+//     "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2"], Error(Nil)))
+//     check.eq(gera_tabela(["Sao Paulo 1 Atletico-MG 2", "Flamengo 2 Palmeiras 1",
+//     "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2"], Error(Nil)))
+//     check.eq(gera_tabela(["Sao-Paulo Atletico-MG 2", "Flamengo 2 Palmeiras 1",
+//     "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2"], Error(Nil)))
+// }
 
 // Gera uma lista com todos os jogos da entrada convertidos para o tipo de dados Jogo. Caso o valor
 // de algum jogo da entrada esteja errado, retorna-se um erro.
-pub fn tabela_jogos(jogos: List[String]) -> Result(List[Jogo], Nil){
-    todo
+// pub fn tabela_jogos(jogos: List(String), tabela: Result(List(Jogo), Nil)) -> Result(List(Jogo), Nil){
+//     todo
+// }
+
+// pub fn converte_jogo(jogo_separado: List(String), contador: Int) -> Result(Jogo, Nil){
+//     todo
+// }
+
+// Vou fazer a lista invertida porque vai ficar mais fácil de ir modificando, quanquer coisa da
+// para inverter a hora de retornar
+pub fn separa_jogo(jogo_str: String, jogo_separado: List(String)) -> List(String){
+    case string.first(jogo_str) {
+        Error(_) -> list.reverse(jogo_separado)
+        Ok(inicial_str) -> case jogo_separado, inicial_str {
+            [], " " -> separa_jogo(string.drop_left(jogo_str, 1), ["", "", ..jogo_separado])
+            [], _ -> separa_jogo(string.drop_left(jogo_str, 1), [inicial_str, ..jogo_separado])
+            _, " " -> separa_jogo(string.drop_left(jogo_str, 1), ["", ..jogo_separado])
+            [primeiro, ..resto], _ -> separa_jogo(string.drop_left(jogo_str, 1), [primeiro <> inicial_str, ..resto])
+        }
+    }
 }
 
-
-pub fn converte_jogo(jogoStr: String, Result(jogoJog: Jogo)) -> Result(Jogo, Nil){
-    todo
+pub fn tabela_class_examples(){
+    check.eq(separa_jogo("Sao-Paulo 1 Atletico-MG 2", []),["Sao-Paulo", "1", "Atletico-MG", "2"])
+    check.eq(separa_jogo("", []),[])
+    check.eq(separa_jogo(" Sao-Paulo 1 Atletico-MG 2", []),["", "Sao-Paulo", "1", "Atletico-MG", "2"])
+    check.eq(separa_jogo("Sao Paulo", []),["Sao", "Paulo"])
+    check.eq(separa_jogo("   ", []),["", "", "", ""])
 }
-
