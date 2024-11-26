@@ -40,7 +40,6 @@ pub type Linha {
 }
 
 
-
 // Projeto de funções principais e auxiliares para resolução do problema:
 
 // Gera a tabela de classificação do Brasileirão. Tomando como base os resultados dos jogos, coloca
@@ -48,10 +47,11 @@ pub type Linha {
 // caso de empates, usando os critérios "Número de Vitórias" (terceira coluna), "Saldo de Gols"
 // (quarta coluna) "Ordem Alfabética". Caso o valor de algum jogo da entrada esteja errado,
 // retorna-se um erro.
+
 pub fn tabela_class(jogos: List(String)) -> Result(List(String), String){
     let tabela_jogos = tabela_jogos(jogos, Ok([]))
     case tabela_jogos {
-        Error(inf) -> Error inf(inf)
+        Error(inf) -> Error(inf)
         Ok(tabela_jogos_ok) -> todo // temos uma tabela com jogos todos certinhos, não precisa mais de Result
     }
 }
@@ -176,4 +176,38 @@ pub fn separa_jogo_examples(){
     check.eq(separa_jogo(" Sao-Paulo 1 Atletico-MG 2", []),["", "Sao-Paulo", "1", "Atletico-MG", "2"])
     check.eq(separa_jogo("Sao Paulo", []),["Sao", "Paulo"])
     check.eq(separa_jogo("   ", []),["", "", "", ""])
+}
+
+// Retorna uma lista com os efeitos que o resultado de Jogo afeta em cada time que participou.
+// A lista contém duas Linhas com os nomes dos times, os pontos ganhados, se gerou 1 ou 0 vitórias
+// e o saldo de gols.
+pub fn efeitos_jogo(jogo: Jogo) -> List(Linha) {
+    [Linha(jogo.anf, num_pontos(jogo.gols_anf > jogo.gols_vis, jogo.gols_anf < jogo.gols_vis),
+    num_vitorias(jogo.gols_anf > jogo.gols_vis),  jogo.gols_anf - jogo.gols_vis), Linha(jogo.vis,
+    num_pontos(jogo.gols_vis > jogo.gols_anf, jogo.gols_vis < jogo.gols_anf),
+    num_vitorias(jogo.gols_vis > jogo.gols_anf),jogo.gols_vis - jogo.gols_anf)]
+}
+
+pub fn efeitos_jogo_examples() {
+    check.eq(efeitos_jogo(Jogo("Sao-Paulo", 1, "Atletico-MG", 2)),[Linha("Sao-Paulo", 0, 0, -1), Linha("Atletico-MG", 3, 1, 1)])
+}
+
+// Indica se o time deve 1 ou 0 vitórias em um jogo. Parece besta, mas é útil saber.
+pub fn num_vitorias(vitoria: Bool) -> Int{
+    case vitoria {
+        True -> 1
+        False -> 0
+    }
+}
+
+// Indica quantos pontos um time ganhou no jogo. Se ele teve vitória, 3 pontos, se ele teve derrota,
+// 0 pontos, se nem vitória nem derrota, então foi um empate - 1 ponto.
+pub fn num_pontos(vitoria: Bool, derrota: Bool) -> Int{
+    case vitoria {
+        True -> 3
+        False -> case derrota {
+            True -> 0
+            False -> 1 // Empate
+        }
+    }
 }
