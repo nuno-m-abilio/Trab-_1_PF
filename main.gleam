@@ -206,6 +206,29 @@ pub fn classificacao_brasileirao_examples() {
     ]),
     Error(Erro(Erro01, "Sao-Paulo Atletico-MG 2")),
   )
+  check.eq(
+    classificacao_brasileirao([
+      "flamengo 2 vasco 0", "fluminense 1 botafogo 1", "palmeiras 3 santos 2",
+      "corinthians 0 sao-paulo 1", "santos 1 flamengo 1",
+      "botafogo 0 palmeiras 2", "sao-paulo 2 vasco 2",
+      "fluminense 3 corinthians 1", "vasco 1 palmeiras 1",
+      "flamengo 3 fluminense 2", "corinthians 2 santos 0",
+      "botafogo 1 sao-paulo 1", "flamengo 2 palmeiras 1",
+      "santos 3 fluminense 3", "botafogo 0 corinthians 2",
+      "sao-paulo 3 flamengo 3", "fluminense 2 vasco 0",
+      "palmeiras 4 corinthians 1", "botafogo 2 santos 2", "vasco 1 flamengo 4",
+      "sao-paulo 0 fluminense 1", "palmeiras 3 botafogo 0",
+      "santos 1 sao-paulo 0", "corinthians 1 vasco 2",
+      "fluminense 1 palmeiras 3", "flamengo 2 botafogo 1", "santos 0 vasco 0",
+      "corinthians 3 sao-paulo 2", "fluminense 0 botafogo 0",
+      "palmeiras 2 santos 1", "vasco 3 fluminense 3", "flamengo 1 corinthians 0",
+    ]),
+    Ok([
+      "flamengo 20 6 9", "palmeiras 19 6 11", "fluminense 13 3 2",
+      "corinthians 9 3 -3", "santos 7 1 -3", "vasco 7 1 -6", "sao-paulo 6 1 -2",
+      "botafogo 4 0 -8",
+    ]),
+  )
 }
 
 // Produz uma tabela de classificação. É precursora da função principal classificacao_brasileirao, mas aqui
