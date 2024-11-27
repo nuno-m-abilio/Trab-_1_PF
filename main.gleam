@@ -1,5 +1,6 @@
 import gleam/int
 import gleam/list
+import gleam/order
 import gleam/string
 import sgleam/check
 
@@ -150,30 +151,64 @@ pub fn mensagem_erro_examples() {
 // caso de empates, usando os critérios "Número de Vitórias" (terceira coluna), "Saldo de Gols"
 // (quarta coluna) "Ordem Alfabética". Caso o valor de algum jogo da entrada esteja errado,
 // retorna-se um erro.
-pub fn tabela_class_str(
+pub fn classificacao_brasileirao(
   jogos: List(String),
-  tabela: Result(List(String), Erro),
 ) -> Result(List(String), Erro) {
   let tabela_jogos = tabela_jogos(jogos, Ok([]))
-
-  todo
+  case tabela_class(tabela_jogos, Ok([])) {
+    Error(Erro(cod_erro, linha_erro)) -> Error(Erro(cod_erro, linha_erro))
+    Ok(tabela_class) -> Ok(str_lista_linhas(tabela_class))
+  }
 }
 
-// pub fn tabela_class_examples(){
-//     check.eq(gera_tabela(["Sao-Paulo 1 Atletico-MG 2", "Flamengo 2 Palmeiras 1",
-//     "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2"], Ok(["Flamengo 6 2 2",
-//     "Atletico-MG 3 1 0", "Palmeiras 1 0 -1", "Sao-Paulo 1 0 -1"])))
-//     check.eq(gera_tabela(["Sao-Paulo -1 Atletico-MG 2", "Flamengo 2 Palmeiras 1",
-//     "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2"], Error(Nil)))
-//     check.eq(gera_tabela(["Sao-Paulo a Atletico-MG 2", "Flamengo 2 Palmeiras 1",
-//     "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2"], Error(Nil)))
-//     check.eq(gera_tabela(["Sao Paulo 1 Atletico-MG 2", "Flamengo 2 Palmeiras 1",
-//     "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2"], Error(Nil)))
-//     check.eq(gera_tabela(["Sao-Paulo Atletico-MG 2", "Flamengo 2 Palmeiras 1",
-//     "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2"], Error(Nil)))
-// }
+pub fn classificacao_brasileirao_examples() {
+  check.eq(
+    classificacao_brasileirao([
+      "Sao-Paulo 1 Atletico-MG 2", "Flamengo 2 Palmeiras 1",
+      "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2",
+    ]),
+    Ok([
+      "Flamengo 6 2 2", "Atletico-MG 3 1 0", "Palmeiras 1 0 -1",
+      "Sao-Paulo 1 0 -1",
+    ]),
+  )
+  check.eq(
+    classificacao_brasileirao([
+      "A 1 B 1", "C 2 D 1", "A 1 C 3", "B 0 D 0", "A 2 D 1", "B 1 C 4",
+    ]),
+    Ok(["C 9 3 6", "A 4 1 -1", "B 2 0 -3", "D 1 0 -2"]),
+  )
+  check.eq(
+    classificacao_brasileirao([
+      "Sao-Paulo -1 Atletico-MG 2", "Flamengo 2 Palmeiras 1",
+      "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2",
+    ]),
+    Error(Erro(Erro06, "Sao-Paulo -1 Atletico-MG 2")),
+  )
+  check.eq(
+    classificacao_brasileirao([
+      "Sao-Paulo a Atletico-MG 2", "Flamengo 2 Palmeiras 1",
+      "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2",
+    ]),
+    Error(Erro(Erro03, "Sao-Paulo a Atletico-MG 2")),
+  )
+  check.eq(
+    classificacao_brasileirao([
+      "Sao Paulo 1 Atletico-MG 2", "Flamengo 2 Palmeiras 1",
+      "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2",
+    ]),
+    Error(Erro(Erro02, "Sao Paulo 1 Atletico-MG 2")),
+  )
+  check.eq(
+    classificacao_brasileirao([
+      "Flamengo 2 Palmeiras 1", "Sao-Paulo Atletico-MG 2",
+      "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2",
+    ]),
+    Error(Erro(Erro01, "Sao-Paulo Atletico-MG 2")),
+  )
+}
 
-// Produz uma tabela de classificação. É precursora da função principal tabela_class_str, mas aqui
+// Produz uma tabela de classificação. É precursora da função principal classificacao_brasileirao, mas aqui
 // os argumentos e resposta ainda são Results com listas de jogos e linhas.
 pub fn tabela_class(
   jogos: Result(List(Jogo), Erro),
@@ -183,8 +218,7 @@ pub fn tabela_class(
     Error(Erro(cod_erro, linha_erro)) -> Error(Erro(cod_erro, linha_erro))
     Ok(jogos_ok) ->
       case jogos_ok, tabela {
-        [], Ok(tabela_ok) -> Ok(tabela_ok)
-        // E adiconar o sort
+        [], Ok(tabela_ok) -> Ok(ordena(tabela_ok))
         [primeiro, ..resto], Ok(tabela_ok) ->
           tabela_class(
             Ok(resto),
@@ -210,10 +244,10 @@ pub fn tabela_class_examples() {
       Ok([]),
     ),
     Ok([
-      Linha("Sao-Paulo", 1, 0, -1),
-      Linha("Atletico-MG", 3, 1, 0),
       Linha("Flamengo", 6, 2, 2),
+      Linha("Atletico-MG", 3, 1, 0),
       Linha("Palmeiras", 1, 0, -1),
+      Linha("Sao-Paulo", 1, 0, -1),
     ]),
   )
 }
@@ -497,5 +531,96 @@ pub fn add_1_efeito_examples() {
       Linha("Flamengo", 3, 1, 5),
     ]),
     [Linha("Sao-Paulo", 3, 1, 1), Linha("Flamengo", 4, 1, 5)],
+  )
+}
+
+pub fn ordena(lst: List(Linha)) -> List(Linha) {
+  case lst {
+    [] | [_] -> lst
+    [primeiro, ..resto] ->
+      list.concat([
+        ordena(lst_pivotada(primeiro, resto, [], []).0),
+        [primeiro],
+        ordena(lst_pivotada(primeiro, resto, [], []).1),
+      ])
+  }
+}
+
+pub fn lst_pivotada(
+  pivo: Linha,
+  lst: List(Linha),
+  antes: List(Linha),
+  depois: List(Linha),
+) -> #(List(Linha), List(Linha)) {
+  case lst {
+    [] -> #(antes, depois)
+    [primeiro, ..resto] ->
+      case eh_antes(primeiro, pivo) {
+        True -> lst_pivotada(pivo, resto, [primeiro, ..antes], depois)
+        False -> lst_pivotada(pivo, resto, antes, [primeiro, ..depois])
+      }
+  }
+}
+
+pub fn eh_antes(primeiro: Linha, pivo: Linha) -> Bool {
+  case primeiro.pts > pivo.pts {
+    True -> True
+    False ->
+      case primeiro.pts < pivo.pts {
+        True -> False
+        False ->
+          case primeiro.vit > pivo.vit {
+            True -> True
+            False ->
+              case primeiro.vit < pivo.vit {
+                True -> False
+                False ->
+                  case primeiro.sg > pivo.sg {
+                    True -> True
+                    False ->
+                      case primeiro.sg < pivo.sg {
+                        True -> False
+                        False ->
+                          case string.compare(primeiro.time, pivo.time) {
+                            order.Lt -> True
+                            _ -> False
+                          }
+                      }
+                  }
+              }
+          }
+      }
+  }
+}
+
+pub fn str_linha(linha: Linha) -> String {
+  linha.time
+  <> " "
+  <> int.to_string(linha.pts)
+  <> " "
+  <> int.to_string(linha.vit)
+  <> " "
+  <> int.to_string(linha.sg)
+}
+
+pub fn str_lista_linhas(lista: List(Linha)) -> List(String) {
+  case lista {
+    [] -> []
+    [primeira, ..resto] -> [str_linha(primeira), ..str_lista_linhas(resto)]
+  }
+}
+
+pub fn str_lista_linhas_examples() {
+  check.eq(
+    str_lista_linhas([
+      Linha("Flamengo", 6, 2, 2),
+      Linha("Atletico-MG", 3, 1, 0),
+      Linha("Palmeiras", 1, 0, -1),
+      Linha("Sao-Paulo", 1, 0, -1),
+    ]),
+    [
+      "Flamengo 6 2 2", "Atletico-MG 3 1 0", "Palmeiras 1 0 -1",
+      "Sao-Paulo 1 0 -1",
+    ],
   )
 }
