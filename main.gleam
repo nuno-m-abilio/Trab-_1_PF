@@ -1,6 +1,6 @@
-import gleam/string
-import gleam/list
 import gleam/int
+import gleam/list
+import gleam/string
 import sgleam/check
 
 //   Análise do problema: O objetivo do trabalho é gerar a tabela de classificação do Brasileirão.
@@ -15,30 +15,133 @@ import sgleam/check
 // Gols, ordenando-a a partir do "Número de Pontos" e, em caso de empates, usando os critérios
 // "Número de Vitórias", "Saldo de Gols" e "Ordem Alfabética".
 
-
-
 //   Projeto dos tipos de dados: Para solucionar o problema, é conveniente criar tipos de dados que
 // adequem-se aos requisitos que são apresentados. Dito isso, dois deles serão criados - um para
 // representar cada resultado de jogo e outro para representar cada linha da tabela de classificação:
 
 // O resultado de um jogo do Brasileirão. 
 pub type Jogo {
-    // anf é o nome do time anfitrião que participou do jogo
-    // golsAnf é a quantidade de gols que o anfitrião fez
-    // vis é o nome do time visitante que participou do jogo
-    // golsVis é a quantidade de gols que o visitante fez
-    Jogo(anf: String, gols_anf: Int, vis: String, gols_vis: Int)
+  // anf é o nome do time anfitrião que participou do jogo
+  // golsAnf é a quantidade de gols que o anfitrião fez
+  // vis é o nome do time visitante que participou do jogo
+  // golsVis é a quantidade de gols que o visitante fez
+  Jogo(anf: String, gols_anf: Int, vis: String, gols_vis: Int)
 }
 
 // Uma linha da tabela de classificação do Brasileirão
 pub type Linha {
-    // time é o nome de um clube esportivo participante do campeonato
-    // pts é o número de pontos obtido pelo time
-    // vit é o número de vitórias obtidas pelo time
-    // sg é o saldo de gols do time (diferença entre gols pró e gols contra)
-    Linha(time: String, pts: Int, vit: Int, sg: Int)
+  // time é o nome de um clube esportivo participante do campeonato
+  // pts é o número de pontos obtido pelo time
+  // vit é o número de vitórias obtidas pelo time
+  // sg é o saldo de gols do time (diferença entre gols pró e gols contra)
+  Linha(time: String, pts: Int, vit: Int, sg: Int)
 }
 
+pub type CodErro {
+  Erro01
+  Erro02
+  Erro03
+  Erro04
+  Erro05
+  Erro06
+  Erro07
+  Erro08
+}
+
+pub type LinhaErro =
+  String
+
+pub type Erro {
+  Erro(cod_erro: CodErro, linha_erro: LinhaErro)
+}
+
+pub fn mensagem_erro(erro: Erro) -> String {
+  case erro.cod_erro {
+    Erro01 ->
+      "Erro #01: A formatação do jogo "
+      <> erro.linha_erro
+      <> " está incorreta. Há menos que 4 campos"
+      <> " de informações"
+    Erro02 ->
+      "Erro #02: A formatação do jogo "
+      <> erro.linha_erro
+      <> " está incorreta. Há mais que 4 campos"
+      <> " de informações"
+    Erro03 ->
+      "Erro #03: Valores do jogo "
+      <> erro.linha_erro
+      <> " estão incoerentes."
+      <> " O segundo campo, que deveria representar um valor numérico, aqui não o faz."
+    Erro04 ->
+      "Erro #04: Valores do jogo "
+      <> erro.linha_erro
+      <> " estão incoerentes."
+      <> " O quarto campo, que deveria representar um valor numérico, aqui não o faz."
+    Erro05 ->
+      "Erro #05: Os valores do jogo "
+      <> erro.linha_erro
+      <> " estão incoerentes. Tanto"
+      <> " o segundo quanto o quarto campo, que deveriam representar valores numéricos, aqui não o fazem."
+    Erro06 ->
+      "Erro #06: Valores do jogo "
+      <> erro.linha_erro
+      <> " estão"
+      <> " incoerentes. O segundo campo, que deveria representar um inteiro positivo, aqui não o faz."
+    Erro07 ->
+      "Erro #07: Valores do jogo "
+      <> erro.linha_erro
+      <> " estão"
+      <> " incoerentes. O quarto campo, que deveria representar um inteiro positivo, aqui não o faz."
+    Erro08 ->
+      "Erro #08: Os valores do jogo "
+      <> erro.linha_erro
+      <> " estão incoerentes. Tanto "
+      <> "o segundo quanto o quarto campo, que deveriam representar inteiros positivos, aqui não o fazem."
+  }
+}
+
+pub fn mensagem_erro_examples() {
+  check.eq(
+    mensagem_erro(Erro(Erro01, "Sao-Paulo 1 Atletico-MG")),
+    "Erro #01: A formatação do jogo"
+      <> " Sao-Paulo 1 Atletico-MG está incorreta. Há menos que 4 campos de informações",
+  )
+  check.eq(
+    mensagem_erro(Erro(Erro02, "Sao-Paulo 1 Atle tico MG")),
+    "Erro #02: A formatação do jogo"
+      <> " Sao-Paulo 1 Atle tico MG está incorreta. Há mais que 4 campos de informações",
+  )
+  check.eq(
+    mensagem_erro(Erro(Erro03, "Sao-Paulo a Atletico-MG 2")),
+    "Erro #03: Valores do jogo Sao-Paulo a Atletico-MG 2"
+      <> " estão incoerentes. O segundo campo, que deveria representar um valor numérico, aqui não o faz.",
+  )
+  check.eq(
+    mensagem_erro(Erro(Erro04, "Sao-Paulo 1 Atletico-MG a")),
+    "Erro #04: Valores do jogo Sao-Paulo 1 Atletico-MG a"
+      <> " estão incoerentes. O quarto campo, que deveria representar um valor numérico, aqui não o faz.",
+  )
+  check.eq(
+    mensagem_erro(Erro(Erro05, "Sao-Paulo a Atletico-MG a")),
+    "Erro #05: Os valores do jogo Sao-Paulo a Atletico-MG"
+      <> " a estão incoerentes. Tanto o segundo quanto o quarto campo, que deveriam representar valores numéricos, aqui não o fazem.",
+  )
+  check.eq(
+    mensagem_erro(Erro(Erro06, "Sao-Paulo -2 Atletico-MG 2")),
+    "Erro #06: Valores do jogo Sao-Paulo -2 Atletico-MG 2 estão"
+      <> " incoerentes. O segundo campo, que deveria representar um inteiro positivo, aqui não o faz.",
+  )
+  check.eq(
+    mensagem_erro(Erro(Erro07, "Sao-Paulo 2 Atletico-MG -2")),
+    "Erro #07: Valores do jogo Sao-Paulo 2 Atletico-MG -2 estão"
+      <> " incoerentes. O quarto campo, que deveria representar um inteiro positivo, aqui não o faz.",
+  )
+  check.eq(
+    mensagem_erro(Erro(Erro08, "Sao-Paulo -1 Atletico-MG -2")),
+    "Erro #08: Os valores do jogo Sao-Paulo -1 Atletico-MG -2 estão"
+      <> " incoerentes. Tanto o segundo quanto o quarto campo, que deveriam representar inteiros positivos, aqui não o fazem.",
+  )
+}
 
 // Projeto de funções principais e auxiliares para resolução do problema:
 
@@ -47,13 +150,13 @@ pub type Linha {
 // caso de empates, usando os critérios "Número de Vitórias" (terceira coluna), "Saldo de Gols"
 // (quarta coluna) "Ordem Alfabética". Caso o valor de algum jogo da entrada esteja errado,
 // retorna-se um erro.
+pub fn tabela_class_str(
+  jogos: List(String),
+  tabela: Result(List(String), Erro),
+) -> Result(List(String), Erro) {
+  let tabela_jogos = tabela_jogos(jogos, Ok([]))
 
-pub fn tabela_class(jogos: List(String)) -> Result(List(String), String){
-    let tabela_jogos = tabela_jogos(jogos, Ok([]))
-    case tabela_jogos {
-        Error(inf) -> Error(inf)
-        Ok(tabela_jogos_ok) -> todo // temos uma tabela com jogos todos certinhos, não precisa mais de Result
-    }
+  todo
 }
 
 // pub fn tabela_class_examples(){
@@ -70,144 +173,329 @@ pub fn tabela_class(jogos: List(String)) -> Result(List(String), String){
 //     "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2"], Error(Nil)))
 // }
 
+// Produz uma tabela de classificação. É precursora da função principal tabela_class_str, mas aqui
+// os argumentos e resposta ainda são Results com listas de jogos e linhas.
+pub fn tabela_class(
+  jogos: Result(List(Jogo), Erro),
+  tabela: Result(List(Linha), Erro),
+) -> Result(List(Linha), Erro) {
+  case jogos {
+    Error(Erro(cod_erro, linha_erro)) -> Error(Erro(cod_erro, linha_erro))
+    Ok(jogos_ok) ->
+      case jogos_ok, tabela {
+        [], Ok(tabela_ok) -> Ok(tabela_ok)
+        // E adiconar o sort
+        [primeiro, ..resto], Ok(tabela_ok) ->
+          tabela_class(
+            Ok(resto),
+            Ok(add_efeitos(efeitos_jogo(primeiro), tabela_ok)),
+          )
+        _, Error(Erro(cod_erro, linha_erro)) ->
+          Error(Erro(cod_erro, linha_erro))
+        // Não deveria acontecer jamais
+      }
+  }
+}
+
+pub fn tabela_class_examples() {
+  check.eq(
+    tabela_class(
+      tabela_jogos(
+        [
+          "Sao-Paulo 1 Atletico-MG 2", "Flamengo 2 Palmeiras 1",
+          "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2",
+        ],
+        Ok([]),
+      ),
+      Ok([]),
+    ),
+    Ok([
+      Linha("Sao-Paulo", 1, 0, -1),
+      Linha("Atletico-MG", 3, 1, 0),
+      Linha("Flamengo", 6, 2, 2),
+      Linha("Palmeiras", 1, 0, -1),
+    ]),
+  )
+}
+
 // Gera uma lista com todos os jogos da entrada convertidos para o tipo de dados Jogo. Caso o valor
 // de algum jogo da entrada esteja errado, retorna-se um erro. Para chamar a função de fora da
 // recursão, tabela deve ser Ok([]).
-pub fn tabela_jogos(jogos: List(String), tabela: Result(List(Jogo), String)) -> Result(List(Jogo), String){
-    case jogos {
-        [] -> case tabela {
-            Ok(tabela_ok) -> Ok(list.reverse(tabela_ok))
-            Error(inf) -> Error(inf) // Não é para acontecer jamais, mas eu quero acessar o valor dentro do Ok
-        }
-        [primeiro, ..resto] -> case converte_jogo(primeiro) {
-            Ok(jogo_convertido) -> case tabela {
-                Ok(tabela_ok) -> tabela_jogos(resto, Ok([jogo_convertido, ..tabela_ok]))
-                Error(inf) -> Error(inf) // Não é para acontecer jamais, mas eu quero acessar o valor dentro do Ok
-            }
-            Error(inf) -> Error(inf)
-        }
-    }
+pub fn tabela_jogos(
+  jogos: List(String),
+  tabela: Result(List(Jogo), Erro),
+) -> Result(List(Jogo), Erro) {
+  case jogos {
+    [] ->
+      case tabela {
+        Ok(tabela_ok) -> Ok(list.reverse(tabela_ok))
+        Error(Erro(cod_erro, linha_erro)) -> Error(Erro(cod_erro, linha_erro))
+        // Não é para acontecer jamais, mas eu quero acessar o valor dentro do Ok
+      }
+    [primeiro, ..resto] ->
+      case converte_jogo(primeiro) {
+        Ok(jogo_convertido) ->
+          case tabela {
+            Ok(tabela_ok) ->
+              tabela_jogos(resto, Ok([jogo_convertido, ..tabela_ok]))
+            Error(Erro(cod_erro, linha_erro)) ->
+              Error(Erro(cod_erro, linha_erro))
+            // Não é para acontecer jamais, mas eu quero acessar o valor dentro do Ok
+          }
+        Error(Erro(cod_erro, linha_erro)) -> Error(Erro(cod_erro, linha_erro))
+      }
+  }
 }
 
-pub fn tabela_jogos_examples(){
-    check.eq(tabela_jogos(["Sao-Paulo 1 Atletico-MG 2", "Flamengo 2 Palmeiras 1", "Palmeiras 0 Sao-Paulo 0"],
-    Ok([])), Ok([Jogo("Sao-Paulo", 1, "Atletico-MG", 2), Jogo("Flamengo", 2, "Palmeiras", 1), Jogo("Palmeiras", 0,
-    "Sao-Paulo", 0)]))
-    check.eq(tabela_jogos(["Sao-Paulo 1 Atletico-MG", "Flamengo 2 Palmeiras 1", "Palmeiras 0 Sao-Paulo 0"],
-    Ok([])), Error("Erro #01: A formatação do jogo Sao-Paulo 1 Atletico-MG está incorreta. Há menos que 4 campos de informações"))
-    check.eq(tabela_jogos(["Sao-Paulo 1 Atletico-MG 2", "Flamengo -2 Palmeiras -1", "Palmeiras 0 Sao-Paulo 0"],
-    Ok([])), Error("Erro #08: Os valores do jogo Flamengo -2 Palmeiras -1 estão incoerentes. Tanto o segundo quanto o quarto campo, "
-    <> "que deveriam representar inteiros positivos, aqui não o fazem."))
+pub fn tabela_jogos_examples() {
+  check.eq(
+    tabela_jogos(
+      [
+        "Sao-Paulo 1 Atletico-MG 2", "Flamengo 2 Palmeiras 1",
+        "Palmeiras 0 Sao-Paulo 0",
+      ],
+      Ok([]),
+    ),
+    Ok([
+      Jogo("Sao-Paulo", 1, "Atletico-MG", 2),
+      Jogo("Flamengo", 2, "Palmeiras", 1),
+      Jogo("Palmeiras", 0, "Sao-Paulo", 0),
+    ]),
+  )
+  check.eq(
+    tabela_jogos(
+      [
+        "Sao-Paulo 1 Atletico-MG", "Flamengo 2 Palmeiras 1",
+        "Palmeiras 0 Sao-Paulo 0",
+      ],
+      Ok([]),
+    ),
+    Error(Erro(Erro01, "Sao-Paulo 1 Atletico-MG")),
+  )
+  check.eq(
+    tabela_jogos(
+      [
+        "Sao-Paulo 1 Atletico-MG 2", "Flamengo -2 Palmeiras -1",
+        "Palmeiras 0 Sao-Paulo 0",
+      ],
+      Ok([]),
+    ),
+    Error(Erro(Erro08, "Flamengo -2 Palmeiras -1")),
+  )
 }
 
 // Converte um resultado de jogo na forma de String para a formatação no tipo Jogo, caso a String
 // tenha a representação correta. Caso contrário, retorna-se o erro que impediu a resposta certa.
-pub fn converte_jogo(jogo_str: String) -> Result(Jogo, String){
-    let jogo_separado: List(String) = separa_jogo(jogo_str, [])
-    case jogo_separado{
-        [] | [_] |[_, _] | [_, _, _] -> Error("Erro #01: A formatação do jogo " <> jogo_str <> " está"
-        <> " incorreta. Há menos que 4 campos de informações")
-        [primeiro, segundo, terceiro, quarto] -> case int.parse(segundo), int.parse(quarto) {
-            Error(_), Error(_) -> Error("Erro #05: Os valores do jogo " <> jogo_str <> " estão incoerentes. Tanto"
-            <> " o segundo quanto o quarto campo, que deveriam representar valores numéricos, aqui não o fazem.")
-            Error(_), _ -> Error("Erro #03: Valores do jogo " <> jogo_str <> " estão incoerentes." <>
-            " O segundo campo, que deveria representar um valor numérico, aqui não o faz.")
-            _, Error(_) -> Error("Erro #04: Valores do jogo " <> jogo_str <> " estão incoerentes." <>
-            " O quarto campo, que deveria representar um valor numérico, aqui não o faz.")
-            Ok(segundo_int), Ok(quarto_int) -> case segundo_int, quarto_int {
-                _, _ if segundo_int < 0 && quarto_int < 0 -> Error("Erro #08: Os valores do jogo " <>
-                jogo_str <> " estão incoerentes. Tanto o segundo quanto o quarto campo, que deveriam" 
-                <> " representar inteiros positivos, aqui não o fazem.")
-                _, _ if segundo_int < 0 -> Error("Erro #06: Valores do jogo " <> jogo_str <> " estão" <>
-                " incoerentes. O segundo campo, que deveria representar um inteiro positivo, aqui não o faz.")
-                _, _ if quarto_int < 0 -> Error("Erro #07: Valores do jogo " <> jogo_str <> " estão" <>
-                " incoerentes. O quarto campo, que deveria representar um inteiro positivo, aqui não o faz.")
-                _, _ -> Ok(Jogo(primeiro, segundo_int, terceiro, quarto_int))
-            }
-        }
-        _ -> Error("Erro #02: A formatação do jogo " <> jogo_str <> " está incorreta. Há mais que 4 campos"
-        <> " de informações")
-    }
+pub fn converte_jogo(jogo_str: String) -> Result(Jogo, Erro) {
+  let jogo_separado: List(String) = separa_jogo(jogo_str, [])
+  case jogo_separado {
+    [] | [_] | [_, _] | [_, _, _] -> Error(Erro(Erro01, jogo_str))
+    [primeiro, segundo, terceiro, quarto] ->
+      case int.parse(segundo), int.parse(quarto) {
+        Error(_), Error(_) -> Error(Erro(Erro05, jogo_str))
+        Error(_), _ -> Error(Erro(Erro03, jogo_str))
+        _, Error(_) -> Error(Erro(Erro04, jogo_str))
+        Ok(segundo_int), Ok(quarto_int) ->
+          case segundo_int, quarto_int {
+            _, _ if segundo_int < 0 && quarto_int < 0 ->
+              Error(Erro(Erro08, jogo_str))
+            _, _ if segundo_int < 0 -> Error(Erro(Erro06, jogo_str))
+            _, _ if quarto_int < 0 -> Error(Erro(Erro07, jogo_str))
+            _, _ -> Ok(Jogo(primeiro, segundo_int, terceiro, quarto_int))
+          }
+      }
+    _ -> Error(Erro(Erro02, jogo_str))
+  }
 }
 
-pub fn converte_jogo_examples(){
-    check.eq(converte_jogo("Sao-Paulo 1 Atletico-MG 2"), Ok(Jogo("Sao-Paulo", 1, "Atletico-MG", 2)))
-    check.eq(converte_jogo("Sao-Paulo 1 Atletico-MG"), Error("Erro #01: A formatação do jogo" <>
-    " Sao-Paulo 1 Atletico-MG está incorreta. Há menos que 4 campos de informações"))
-    check.eq(converte_jogo("Sao-Paulo 1 Atle tico MG"),  Error("Erro #02: A formatação do jogo" 
-    <> " Sao-Paulo 1 Atle tico MG está incorreta. Há mais que 4 campos de informações"))
-    check.eq(converte_jogo("Sao-Paulo a Atletico-MG 2"),  Error("Erro #03: Valores do jogo Sao-Paulo a Atletico-MG 2"
-    <> " estão incoerentes. O segundo campo, que deveria representar um valor numérico, aqui não o faz."))
-    check.eq(converte_jogo("Sao-Paulo 1 Atletico-MG a"),  Error("Erro #04: Valores do jogo Sao-Paulo 1 Atletico-MG a"
-    <> " estão incoerentes. O quarto campo, que deveria representar um valor numérico, aqui não o faz."))
-    check.eq(converte_jogo("Sao-Paulo a Atletico-MG a"),  Error("Erro #05: Os valores do jogo Sao-Paulo a Atletico-MG" 
-    <> " a estão incoerentes. Tanto o segundo quanto o quarto campo, que deveriam representar valores numéricos, aqui não o fazem."))
-    check.eq(converte_jogo("Sao-Paulo -2 Atletico-MG 2"),  Error("Erro #06: Valores do jogo Sao-Paulo -2 Atletico-MG 2 estão" <>
-    " incoerentes. O segundo campo, que deveria representar um inteiro positivo, aqui não o faz."))
-    check.eq(converte_jogo("Sao-Paulo 2 Atletico-MG -2"),  Error("Erro #07: Valores do jogo Sao-Paulo 2 Atletico-MG -2 estão" <>
-    " incoerentes. O quarto campo, que deveria representar um inteiro positivo, aqui não o faz."))
-    check.eq(converte_jogo("Sao-Paulo -1 Atletico-MG -2"),  Error("Erro #08: Os valores do jogo Sao-Paulo -1 Atletico-MG -2 estão"
-    <> " incoerentes. Tanto o segundo quanto o quarto campo, que deveriam representar inteiros positivos, aqui não o fazem."))
+pub fn converte_jogo_examples() {
+  check.eq(
+    converte_jogo("Sao-Paulo 1 Atletico-MG 2"),
+    Ok(Jogo("Sao-Paulo", 1, "Atletico-MG", 2)),
+  )
+  check.eq(
+    converte_jogo("Sao-Paulo 1 Atletico-MG"),
+    Error(Erro(Erro01, "Sao-Paulo 1 Atletico-MG")),
+  )
+  check.eq(
+    converte_jogo("Sao-Paulo 1 Atle tico MG"),
+    Error(Erro(Erro02, "Sao-Paulo 1 Atle tico MG")),
+  )
+  check.eq(
+    converte_jogo("Sao-Paulo a Atletico-MG 2"),
+    Error(Erro(Erro03, "Sao-Paulo a Atletico-MG 2")),
+  )
+  check.eq(
+    converte_jogo("Sao-Paulo 1 Atletico-MG a"),
+    Error(Erro(Erro04, "Sao-Paulo 1 Atletico-MG a")),
+  )
+  check.eq(
+    converte_jogo("Sao-Paulo a Atletico-MG a"),
+    Error(Erro(Erro05, "Sao-Paulo a Atletico-MG a")),
+  )
+  check.eq(
+    converte_jogo("Sao-Paulo -2 Atletico-MG 2"),
+    Error(Erro(Erro06, "Sao-Paulo -2 Atletico-MG 2")),
+  )
+  check.eq(
+    converte_jogo("Sao-Paulo 2 Atletico-MG -2"),
+    Error(Erro(Erro07, "Sao-Paulo 2 Atletico-MG -2")),
+  )
+  check.eq(
+    converte_jogo("Sao-Paulo -1 Atletico-MG -2"),
+    Error(Erro(Erro08, "Sao-Paulo -1 Atletico-MG -2")),
+  )
 }
-
 
 // Produz uma lista com os elementos da String de entrada separados pelos caracteres de espaço. É
 // como se os caracteres de espaço na String se tornassem vírgulas na lista. Para chamar a função
 // de fora da recursão, jogo_separado deve ser [].
-pub fn separa_jogo(jogo_str: String, jogo_separado: List(String)) -> List(String){
-    case string.first(jogo_str) {
-        // Esse é o  fim da recursão, com a String estando vazia. Nesse caso, como a Lista estava
-        // sendo feita colocando novos elementos no começo, ela deve ser invertida no final.
-        Error(_) -> list.reverse(jogo_separado)
-        // Demais casos em que há ao menos um caractere na String. Casos em que a lista ainda está
-        // vazia ou o caractere de espaço aparece devem ser tratados de forma especial.
-        Ok(inicial_str) -> case jogo_separado, inicial_str {
-            [], " " -> separa_jogo(string.drop_left(jogo_str, 1), ["", "", ..jogo_separado])
-            [], _ -> separa_jogo(string.drop_left(jogo_str, 1), [inicial_str, ..jogo_separado])
-            _, " " -> separa_jogo(string.drop_left(jogo_str, 1), ["", ..jogo_separado])
-            [primeiro, ..resto], _ -> separa_jogo(string.drop_left(jogo_str, 1), [primeiro <> inicial_str, ..resto])
-        }
-    }
+pub fn separa_jogo(
+  jogo_str: String,
+  jogo_separado: List(String),
+) -> List(String) {
+  case string.first(jogo_str) {
+    // Esse é o  fim da recursão, com a String estando vazia. Nesse caso, como a Lista estava
+    // sendo feita colocando novos elementos no começo, ela deve ser invertida no final.
+    Error(_) -> list.reverse(jogo_separado)
+    // Demais casos em que há ao menos um caractere na String. Casos em que a lista ainda está
+    // vazia ou o caractere de espaço aparece devem ser tratados de forma especial.
+    Ok(inicial_str) ->
+      case jogo_separado, inicial_str {
+        [], " " ->
+          separa_jogo(string.drop_left(jogo_str, 1), ["", "", ..jogo_separado])
+        [], _ ->
+          separa_jogo(string.drop_left(jogo_str, 1), [
+            inicial_str,
+            ..jogo_separado
+          ])
+        _, " " ->
+          separa_jogo(string.drop_left(jogo_str, 1), ["", ..jogo_separado])
+        [primeiro, ..resto], _ ->
+          separa_jogo(string.drop_left(jogo_str, 1), [
+            primeiro <> inicial_str,
+            ..resto
+          ])
+      }
+  }
 }
 
-pub fn separa_jogo_examples(){
-    check.eq(separa_jogo("Sao-Paulo 1 Atletico-MG 2", []),["Sao-Paulo", "1", "Atletico-MG", "2"])
-    check.eq(separa_jogo("", []),[])
-    check.eq(separa_jogo(" Sao-Paulo 1 Atletico-MG 2", []),["", "Sao-Paulo", "1", "Atletico-MG", "2"])
-    check.eq(separa_jogo("Sao Paulo", []),["Sao", "Paulo"])
-    check.eq(separa_jogo("   ", []),["", "", "", ""])
+pub fn separa_jogo_examples() {
+  check.eq(separa_jogo("Sao-Paulo 1 Atletico-MG 2", []), [
+    "Sao-Paulo", "1", "Atletico-MG", "2",
+  ])
+  check.eq(separa_jogo("", []), [])
+  check.eq(separa_jogo(" Sao-Paulo 1 Atletico-MG 2", []), [
+    "", "Sao-Paulo", "1", "Atletico-MG", "2",
+  ])
+  check.eq(separa_jogo("Sao Paulo", []), ["Sao", "Paulo"])
+  check.eq(separa_jogo("   ", []), ["", "", "", ""])
 }
 
 // Retorna uma lista com os efeitos que o resultado de Jogo afeta em cada time que participou.
 // A lista contém duas Linhas com os nomes dos times, os pontos ganhados, se gerou 1 ou 0 vitórias
 // e o saldo de gols.
 pub fn efeitos_jogo(jogo: Jogo) -> List(Linha) {
-    [Linha(jogo.anf, num_pontos(jogo.gols_anf > jogo.gols_vis, jogo.gols_anf < jogo.gols_vis),
-    num_vitorias(jogo.gols_anf > jogo.gols_vis),  jogo.gols_anf - jogo.gols_vis), Linha(jogo.vis,
-    num_pontos(jogo.gols_vis > jogo.gols_anf, jogo.gols_vis < jogo.gols_anf),
-    num_vitorias(jogo.gols_vis > jogo.gols_anf),jogo.gols_vis - jogo.gols_anf)]
+  [
+    Linha(
+      jogo.anf,
+      num_pontos(jogo.gols_anf > jogo.gols_vis, jogo.gols_anf < jogo.gols_vis),
+      num_vitorias(jogo.gols_anf > jogo.gols_vis),
+      jogo.gols_anf - jogo.gols_vis,
+    ),
+    Linha(
+      jogo.vis,
+      num_pontos(jogo.gols_vis > jogo.gols_anf, jogo.gols_vis < jogo.gols_anf),
+      num_vitorias(jogo.gols_vis > jogo.gols_anf),
+      jogo.gols_vis - jogo.gols_anf,
+    ),
+  ]
 }
 
 pub fn efeitos_jogo_examples() {
-    check.eq(efeitos_jogo(Jogo("Sao-Paulo", 1, "Atletico-MG", 2)),[Linha("Sao-Paulo", 0, 0, -1), Linha("Atletico-MG", 3, 1, 1)])
+  check.eq(efeitos_jogo(Jogo("Sao-Paulo", 1, "Atletico-MG", 2)), [
+    Linha("Sao-Paulo", 0, 0, -1),
+    Linha("Atletico-MG", 3, 1, 1),
+  ])
 }
 
 // Indica se o time deve 1 ou 0 vitórias em um jogo. Parece besta, mas é útil saber.
-pub fn num_vitorias(vitoria: Bool) -> Int{
-    case vitoria {
-        True -> 1
-        False -> 0
-    }
+pub fn num_vitorias(vitoria: Bool) -> Int {
+  case vitoria {
+    True -> 1
+    False -> 0
+  }
 }
 
 // Indica quantos pontos um time ganhou no jogo. Se ele teve vitória, 3 pontos, se ele teve derrota,
-// 0 pontos, se nem vitória nem derrota, então foi um empate - 1 ponto.
-pub fn num_pontos(vitoria: Bool, derrota: Bool) -> Int{
-    case vitoria {
-        True -> 3
-        False -> case derrota {
-            True -> 0
-            False -> 1 // Empate
-        }
-    }
+// 0 pontos, se nem vitória nem derrota, então foi um empate, ou seja, 1 ponto.
+pub fn num_pontos(vitoria: Bool, derrota: Bool) -> Int {
+  case vitoria {
+    True -> 3
+    False ->
+      case derrota {
+        True -> 0
+        False -> 1
+        // Empate
+      }
+  }
+}
+
+// Adiciona os efeitos de um jogo presentes em uma lista na tabela de classificação (não considera ordenação)
+pub fn add_efeitos(efeitos: List(Linha), tabela: List(Linha)) -> List(Linha) {
+  case efeitos {
+    [] -> tabela
+    [primeiro, ..resto] -> add_efeitos(resto, add_1_efeito(primeiro, tabela))
+  }
+}
+
+pub fn add_efeitos_examples() {
+  check.eq(
+    add_efeitos([Linha("Sao-Paulo", 0, 0, -5), Linha("Flamengo", 3, 1, 5)], [
+      Linha("Sao-Paulo", 3, 1, 1),
+      Linha("Flamengo", 3, 1, 5),
+    ]),
+    [Linha("Sao-Paulo", 3, 1, -4), Linha("Flamengo", 6, 2, 10)],
+  )
+}
+
+// Adiciona um efeito de um jogo na tabela de classificação (não considera ordenação)
+pub fn add_1_efeito(efeito: Linha, tabela: List(Linha)) -> List(Linha) {
+  case tabela {
+    [] -> [efeito]
+    [primeiro, ..resto] ->
+      case efeito.time == primeiro.time {
+        True -> [
+          Linha(
+            primeiro.time,
+            efeito.pts + primeiro.pts,
+            efeito.vit + primeiro.vit,
+            efeito.sg + primeiro.sg,
+          ),
+          ..resto
+        ]
+        False -> [primeiro, ..add_1_efeito(efeito, resto)]
+      }
+  }
+}
+
+pub fn add_1_efeito_examples() {
+  check.eq(add_1_efeito(Linha("Sao-Paulo", 0, 0, -1), []), [
+    Linha("Sao-Paulo", 0, 0, -1),
+  ])
+  check.eq(
+    add_1_efeito(Linha("Sao-Paulo", 3, 1, 2), [Linha("Sao-Paulo", 0, 0, -1)]),
+    [Linha("Sao-Paulo", 3, 1, 1)],
+  )
+  check.eq(
+    add_1_efeito(Linha("Flamengo", 3, 1, 5), [Linha("Sao-Paulo", 3, 1, 1)]),
+    [Linha("Sao-Paulo", 3, 1, 1), Linha("Flamengo", 3, 1, 5)],
+  )
+  check.eq(
+    add_1_efeito(Linha("Flamengo", 1, 0, 0), [
+      Linha("Sao-Paulo", 3, 1, 1),
+      Linha("Flamengo", 3, 1, 5),
+    ]),
+    [Linha("Sao-Paulo", 3, 1, 1), Linha("Flamengo", 4, 1, 5)],
+  )
 }
