@@ -217,8 +217,7 @@ pub fn tabela_jogos_examples() {
 // Converte um resultado de jogo na forma de String para a formatação no tipo Jogo, caso a String
 // tenha a representação correta. Caso contrário, retorna-se o erro correspondente.
 pub fn converte_jogo(jogo_str: String) -> Result(Jogo, Erro) {
-  let jogo_separado: List(String) = separa_jogo(jogo_str, [])
-  case jogo_separado {
+  case separa_jogo(jogo_str, []) {
     [] | [_] | [_, _] | [_, _, _] -> Error(Erro(Erro01, jogo_str))
     [primeiro, segundo, terceiro, quarto] ->
       case int.parse(segundo), int.parse(quarto) {
@@ -552,33 +551,18 @@ pub fn lst_pivotada_examples() {
 // critérios usados são maior "Número de Pontos", maior "Número de Vitórias", maior "Saldo de
 // Gols" e "Ordem Alfabética", nessa ordem de prioridade.
 pub fn eh_antes(primeiro: Linha, pivo: Linha) -> Bool {
-  case primeiro.pts > pivo.pts {
-    True -> True
-    False ->
-      case primeiro.pts < pivo.pts {
-        True -> False
-        False ->
-          case primeiro.vit > pivo.vit {
-            True -> True
-            False ->
-              case primeiro.vit < pivo.vit {
-                True -> False
-                False ->
-                  case primeiro.sg > pivo.sg {
-                    True -> True
-                    False ->
-                      case primeiro.sg < pivo.sg {
-                        True -> False
-                        False ->
-                          case string.compare(primeiro.time, pivo.time) {
-                            order.Lt -> True
-                            _ -> False
-                          }
-                      }
-                  }
-              }
-          }
-      }
+  { primeiro.pts > pivo.pts }
+  || { primeiro.pts == pivo.pts && primeiro.vit > pivo.vit }
+  || {
+    primeiro.pts == pivo.pts
+    && primeiro.vit == pivo.vit
+    && primeiro.sg > pivo.sg
+  }
+  || {
+    primeiro.pts == pivo.pts
+    && primeiro.vit == pivo.vit
+    && primeiro.sg == pivo.sg
+    && string.compare(primeiro.time, pivo.time) == order.Lt
   }
 }
 
