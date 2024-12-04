@@ -72,9 +72,9 @@ pub type Erro {
 pub fn classificacao_brasileirao(
   jogos: List(String),
 ) -> Result(List(String), Erro) {
-  case tabela_class(tabela_jogos(jogos, Ok([])), Ok([])) {
+  case tabela_class(tabela_jogos(jogos)) {
+    Ok(tabela_class) -> Ok(str_tabela_class(ordena(tabela_class)))
     Error(Erro(cod_erro, linha_erro)) -> Error(Erro(cod_erro, linha_erro))
-    Ok(tabela_class) -> Ok(str_tabela_class(tabela_class))
   }
 }
 
@@ -149,43 +149,26 @@ pub fn classificacao_brasileirao_examples() {
 }
 
 // Gera uma lista com todos os jogos da entrada convertidos para o tipo de dados Jogo. Caso o valor
-// de algum jogo da entrada esteja errado, retorna-se um erro. Para chamar a função de fora da
-// recursão, tabela deve ser Ok([]).
-pub fn tabela_jogos(
-  jogos: List(String),
-  tabela: Result(List(Jogo), Erro),
-) -> Result(List(Jogo), Erro) {
+// de algum jogo da entrada esteja errado, retorna-se um erro.
+pub fn tabela_jogos(jogos: List(String)) -> Result(List(Jogo), Erro) {
   case jogos {
-    [] ->
-      case tabela {
-        Ok(tabela_ok) -> Ok(list.reverse(tabela_ok))
-        Error(Erro(cod_erro, linha_erro)) -> Error(Erro(cod_erro, linha_erro))
-        // Não é para acontecer jamais, mas eu quero acessar o valor dentro do Ok
-      }
+    [] -> Ok([])
     [primeiro, ..resto] ->
-      case converte_jogo(primeiro) {
-        Ok(jogo_convertido) ->
-          case tabela {
-            Ok(tabela_ok) ->
-              tabela_jogos(resto, Ok([jogo_convertido, ..tabela_ok]))
-            Error(Erro(cod_erro, linha_erro)) ->
-              Error(Erro(cod_erro, linha_erro))
-            // Não é para acontecer jamais, mas eu quero acessar o valor dentro do Ok
-          }
-        Error(Erro(cod_erro, linha_erro)) -> Error(Erro(cod_erro, linha_erro))
+      case converte_jogo(primeiro), tabela_jogos(resto) {
+        Ok(jogo_convertido), Ok(tabela_resto_ok) ->
+          Ok([jogo_convertido, ..tabela_resto_ok])
+        Error(erro), _ -> Error(erro)
+        _, Error(erro) -> Error(erro)
       }
   }
 }
 
 pub fn tabela_jogos_examples() {
   check.eq(
-    tabela_jogos(
-      [
-        "Sao-Paulo 1 Atletico-MG 2", "Flamengo 2 Palmeiras 1",
-        "Palmeiras 0 Sao-Paulo 0",
-      ],
-      Ok([]),
-    ),
+    tabela_jogos([
+      "Sao-Paulo 1 Atletico-MG 2", "Flamengo 2 Palmeiras 1",
+      "Palmeiras 0 Sao-Paulo 0",
+    ]),
     Ok([
       Jogo("Sao-Paulo", 1, "Atletico-MG", 2),
       Jogo("Flamengo", 2, "Palmeiras", 1),
@@ -193,23 +176,17 @@ pub fn tabela_jogos_examples() {
     ]),
   )
   check.eq(
-    tabela_jogos(
-      [
-        "Sao-Paulo 1 Atletico-MG", "Flamengo 2 Palmeiras 1",
-        "Palmeiras 0 Sao-Paulo 0",
-      ],
-      Ok([]),
-    ),
+    tabela_jogos([
+      "Sao-Paulo 1 Atletico-MG", "Flamengo 2 Palmeiras 1",
+      "Palmeiras 0 Sao-Paulo 0",
+    ]),
     Error(Erro(Erro01, "Sao-Paulo 1 Atletico-MG")),
   )
   check.eq(
-    tabela_jogos(
-      [
-        "Sao-Paulo 1 Atletico-MG 2", "Flamengo -2 Palmeiras -1",
-        "Palmeiras 0 Sao-Paulo 0",
-      ],
-      Ok([]),
-    ),
+    tabela_jogos([
+      "Sao-Paulo 1 Atletico-MG 2", "Flamengo -2 Palmeiras -1",
+      "Palmeiras 0 Sao-Paulo 0",
+    ]),
     Error(Erro(Erro08, "Flamengo -2 Palmeiras -1")),
   )
 }
@@ -217,22 +194,31 @@ pub fn tabela_jogos_examples() {
 // Converte um resultado de jogo na forma de String para a formatação no tipo Jogo, caso a String
 // tenha a representação correta. Caso contrário, retorna-se o erro correspondente.
 pub fn converte_jogo(jogo_str: String) -> Result(Jogo, Erro) {
-  case separa_jogo(jogo_str, []) {
+  case separa_jogo(jogo_str) {
+    // campos faltando
     [] | [_] | [_, _] | [_, _, _] -> Error(Erro(Erro01, jogo_str))
     [primeiro, segundo, terceiro, quarto] ->
       case int.parse(segundo), int.parse(quarto) {
+        // ambos os gols não numéricos
         Error(_), Error(_) -> Error(Erro(Erro05, jogo_str))
+        // gol do anfitrião não numérico
         Error(_), _ -> Error(Erro(Erro03, jogo_str))
+        // gol do visitante não numérico
         _, Error(_) -> Error(Erro(Erro04, jogo_str))
         Ok(segundo_int), Ok(quarto_int) ->
           case segundo_int, quarto_int {
+            // ambos os gols negativos
             _, _ if segundo_int < 0 && quarto_int < 0 ->
               Error(Erro(Erro08, jogo_str))
+            // gol do anfitrião negativo
             _, _ if segundo_int < 0 -> Error(Erro(Erro06, jogo_str))
+            // gol do visitante não numérico
             _, _ if quarto_int < 0 -> Error(Erro(Erro07, jogo_str))
+            // perfeito
             _, _ -> Ok(Jogo(primeiro, segundo_int, terceiro, quarto_int))
           }
       }
+    // Campos a mais
     _ -> Error(Erro(Erro02, jogo_str))
   }
 }
@@ -277,89 +263,62 @@ pub fn converte_jogo_examples() {
 }
 
 // Produz uma lista com os elementos da String de entrada separados pelos caracteres de espaço. É
-// como se os caracteres de espaço na String se tornassem vírgulas na lista. Para chamar a função
-// de fora da recursão, jogo_separado deve ser [].
-pub fn separa_jogo(
-  jogo_str: String,
-  jogo_separado: List(String),
-) -> List(String) {
+// como se os caracteres de espaço na String se tornassem vírgulas na lista.
+pub fn separa_jogo(jogo_str: String) -> List(String) {
   case string.first(jogo_str) {
-    // Esse é o  fim da recursão, com a String estando vazia. Nesse caso, como a Lista estava
-    // sendo feita colocando novos elementos no começo, ela deve ser invertida no final.
-    Error(_) -> list.reverse(jogo_separado)
-    // Demais casos em que há ao menos um caractere na String. Casos em que a lista ainda está
-    // vazia ou o caractere de espaço aparece devem ser tratados de forma especial.
+    Error(_) -> []
     Ok(inicial_str) ->
-      case jogo_separado, inicial_str {
-        [], " " ->
-          separa_jogo(string.drop_left(jogo_str, 1), ["", "", ..jogo_separado])
-        [], _ ->
-          separa_jogo(string.drop_left(jogo_str, 1), [
-            inicial_str,
-            ..jogo_separado
-          ])
-        _, " " ->
-          separa_jogo(string.drop_left(jogo_str, 1), ["", ..jogo_separado])
-        [primeiro, ..resto], _ ->
-          separa_jogo(string.drop_left(jogo_str, 1), [
-            primeiro <> inicial_str,
-            ..resto
-          ])
+      case inicial_str, separa_jogo(string.drop_left(jogo_str, 1)) {
+        " ", [] -> ["", ""]
+        " ", resto -> ["", ..resto]
+        letra, [] -> [letra]
+        letra, [primeiro, ..resto] -> [letra <> primeiro, ..resto]
       }
   }
 }
 
 pub fn separa_jogo_examples() {
-  check.eq(separa_jogo("Sao-Paulo 1 Atletico-MG 2", []), [
+  check.eq(separa_jogo("Sao-Paulo 1 Atletico-MG 2"), [
     "Sao-Paulo", "1", "Atletico-MG", "2",
   ])
-  check.eq(separa_jogo("", []), [])
-  check.eq(separa_jogo(" Sao-Paulo 1 Atletico-MG 2", []), [
+  check.eq(separa_jogo(""), [])
+  check.eq(separa_jogo(" Sao-Paulo 1 Atletico-MG 2"), [
     "", "Sao-Paulo", "1", "Atletico-MG", "2",
   ])
-  check.eq(separa_jogo("Sao Paulo", []), ["Sao", "Paulo"])
-  check.eq(separa_jogo("   ", []), ["", "", "", ""])
+  check.eq(separa_jogo("Sao Paulo"), ["Sao", "Paulo"])
+  check.eq(separa_jogo("   "), ["", "", "", ""])
 }
 
 // Produz uma tabela de classificação. É precursora da função principal classificacao_brasileirao,
-// mas aqui os argumentos e resposta ainda são Results com listas de jogos e linhas. Para chamar a
-// função de fora da recursão, tabela deve ser Ok([]).
+// mas aqui os argumentos e resposta ainda são Results com listas de jogos e linhas.
 pub fn tabela_class(
   jogos: Result(List(Jogo), Erro),
-  tabela: Result(List(Linha), Erro),
 ) -> Result(List(Linha), Erro) {
   case jogos {
-    Error(Erro(cod_erro, linha_erro)) -> Error(Erro(cod_erro, linha_erro))
     Ok(jogos_ok) ->
-      case jogos_ok, tabela {
-        [], Ok(tabela_ok) -> Ok(ordena(tabela_ok))
-        [primeiro, ..resto], Ok(tabela_ok) ->
-          tabela_class(
-            Ok(resto),
-            Ok(add_efeitos(efeitos_jogo(primeiro), tabela_ok)),
-          )
-        _, Error(Erro(cod_erro, linha_erro)) ->
-          Error(Erro(cod_erro, linha_erro))
-        // Não deveria acontecer jamais
+      case jogos_ok {
+        [] -> Ok([])
+        [primeiro, ..resto] ->
+          case tabela_class(Ok(resto)) {
+            Ok(tabela) -> Ok(add_efeitos(efeitos_jogo(primeiro), tabela))
+            Error(erro) -> Error(erro)
+          }
       }
+    Error(erro) -> Error(erro)
   }
 }
 
 pub fn tabela_class_examples() {
   check.eq(
     tabela_class(
-      tabela_jogos(
-        [
-          "Sao-Paulo 1 Atletico-MG 2", "Flamengo 2 Palmeiras 1",
-          "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2",
-        ],
-        Ok([]),
-      ),
-      Ok([]),
+      tabela_jogos([
+        "Sao-Paulo 1 Atletico-MG 2", "Flamengo 2 Palmeiras 1",
+        "Palmeiras 0 Sao-Paulo 0", "Atletico-MG 1 Flamengo 2",
+      ]),
     ),
     Ok([
-      Linha("Flamengo", 6, 2, 2),
       Linha("Atletico-MG", 3, 1, 0),
+      Linha("Flamengo", 6, 2, 2),
       Linha("Palmeiras", 1, 0, -1),
       Linha("Sao-Paulo", 1, 0, -1),
     ]),
@@ -487,9 +446,9 @@ pub fn ordena(lst: List(Linha)) -> List(Linha) {
     [] | [_] -> lst
     [primeiro, ..resto] ->
       list.concat([
-        ordena(lst_pivotada(primeiro, resto, [], []).0),
+        ordena(lst_pivotada(primeiro, resto).0),
         [primeiro],
-        ordena(lst_pivotada(primeiro, resto, [], []).1),
+        ordena(lst_pivotada(primeiro, resto).1),
       ])
   }
 }
@@ -516,32 +475,31 @@ pub fn ordena_examples() {
 pub fn lst_pivotada(
   pivo: Linha,
   lst: List(Linha),
-  antes: List(Linha),
-  depois: List(Linha),
 ) -> #(List(Linha), List(Linha)) {
   case lst {
-    [] -> #(antes, depois)
+    [] -> #([], [])
     [primeiro, ..resto] ->
       case eh_antes(primeiro, pivo) {
-        True -> lst_pivotada(pivo, resto, [primeiro, ..antes], depois)
-        False -> lst_pivotada(pivo, resto, antes, [primeiro, ..depois])
+        True -> #(
+          [primeiro, ..lst_pivotada(pivo, resto).0],
+          lst_pivotada(pivo, resto).1,
+        )
+        False -> #(lst_pivotada(pivo, resto).0, [
+          primeiro,
+          ..lst_pivotada(pivo, resto).1
+        ])
       }
   }
 }
 
 pub fn lst_pivotada_examples() {
   check.eq(
-    lst_pivotada(
-      Linha("Palmeiras", 1, 0, -1),
-      [
-        Linha("Atletico-MG", 3, 1, 0),
-        Linha("Sao-Paulo", 1, 0, -1),
-        Linha("Flamengo", 6, 2, 2),
-      ],
-      [],
-      [],
-    ),
-    #([Linha("Flamengo", 6, 2, 2), Linha("Atletico-MG", 3, 1, 0)], [
+    lst_pivotada(Linha("Palmeiras", 1, 0, -1), [
+      Linha("Atletico-MG", 3, 1, 0),
+      Linha("Sao-Paulo", 1, 0, -1),
+      Linha("Flamengo", 6, 2, 2),
+    ]),
+    #([Linha("Atletico-MG", 3, 1, 0), Linha("Flamengo", 6, 2, 2)], [
       Linha("Sao-Paulo", 1, 0, -1),
     ]),
   )
@@ -585,7 +543,7 @@ pub fn eh_antes_examples() {
   )
 }
 
-// Transforma uma lista de Linhas em uma lista de Stirngs
+// Transforma uma lista de Linhas em uma lista de Strings
 pub fn str_tabela_class(lista: List(Linha)) -> List(String) {
   case lista {
     [] -> []
