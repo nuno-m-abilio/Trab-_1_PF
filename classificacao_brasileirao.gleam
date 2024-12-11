@@ -17,9 +17,10 @@ import sgleam/check
 // "Número de Vitórias", "Saldo de Gols" e "Ordem Alfabética".
 
 //   Projeto dos tipos de dados: Para solucionar o problema, é conveniente criar tipos de dados que
-// adequem-se aos requisitos que são apresentados. Dito isso, dois deles serão criados - um para
-// representar cada resultado de jogo e outro para representar cada linha da tabela de
-// classificação:
+// adequem-se aos requisitos que são apresentados. Dito isso, inicialmente dois deles serão criados
+// - um para representar cada resultado de jogo e outro para representar cada linha da tabela de
+// classificação. Ademais, uma união chamada Erro será criada com outros dois tipos de dado - o
+// código do erro e a linha do erro.
 
 // O resultado de um jogo do Brasileirão. 
 pub type Jogo {
@@ -360,15 +361,15 @@ pub fn num_pontos(vitoria: Bool, derrota: Bool) -> Int {
     False ->
       case derrota {
         True -> 0
-        False -> 1
         // Empate
+        False -> 1
       }
   }
 }
 
 // Não fiz testes para num_pontos, pois a função é bem simples
 
-// Indica se o time deve 1 ou 0 vitórias em um jogo. Parece besta, mas é útil saber.
+// Indica se o time deve 1 ou 0 vitórias em um jogo. Parece besta, mas é útil.
 pub fn num_vitorias(vitoria: Bool) -> Int {
   case vitoria {
     True -> 1
@@ -444,12 +445,10 @@ pub fn add_1_efeito_examples() {
 pub fn ordena(lst: List(Linha)) -> List(Linha) {
   case lst {
     [] | [_] -> lst
-    [primeiro, ..resto] ->
-      list.concat([
-        ordena(lst_pivotada(primeiro, resto).0),
-        [primeiro],
-        ordena(lst_pivotada(primeiro, resto).1),
-      ])
+    [primeiro, ..resto] -> {
+      let lsts_piv = lst_pivotada(primeiro, resto)
+      list.concat([ordena(lsts_piv.0), [primeiro], ordena(lsts_piv.1)])
+    }
   }
 }
 
@@ -478,17 +477,13 @@ pub fn lst_pivotada(
 ) -> #(List(Linha), List(Linha)) {
   case lst {
     [] -> #([], [])
-    [primeiro, ..resto] ->
+    [primeiro, ..resto] -> {
+      let lsts_piv = lst_pivotada(pivo, resto)
       case eh_antes(primeiro, pivo) {
-        True -> #(
-          [primeiro, ..lst_pivotada(pivo, resto).0],
-          lst_pivotada(pivo, resto).1,
-        )
-        False -> #(lst_pivotada(pivo, resto).0, [
-          primeiro,
-          ..lst_pivotada(pivo, resto).1
-        ])
+        True -> #([primeiro, ..lsts_piv.0], lsts_piv.1)
+        False -> #(lsts_piv.0, [primeiro, ..lsts_piv.1])
       }
+    }
   }
 }
 
